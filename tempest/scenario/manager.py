@@ -14,7 +14,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import logging
 import os
 import subprocess
 
@@ -35,13 +34,6 @@ import tempest.test
 CONF = config.CONF
 
 LOG = log.getLogger(__name__)
-
-# NOTE(afazekas): Workaround for the stdout logging
-LOG_nova_client = logging.getLogger('novaclient.client')
-LOG_nova_client.addHandler(log.NullHandler())
-
-LOG_cinder_client = logging.getLogger('cinderclient.client')
-LOG_cinder_client.addHandler(log.NullHandler())
 
 
 class ScenarioTest(tempest.test.BaseTestCase):
@@ -556,7 +548,7 @@ class NetworkScenarioTest(ScenarioTest):
         if not client:
             client = self.network_client
         if not tenant_id:
-            tenant_id = client.rest_client.tenant_id
+            tenant_id = client.tenant_id
         name = data_utils.rand_name(namestart)
         result = client.create_network(name=name, tenant_id=tenant_id)
         network = net_resources.DeletableNetwork(client=client,
@@ -751,9 +743,9 @@ class NetworkScenarioTest(ScenarioTest):
         # The target login is assumed to have been configured for
         # key-based authentication by cloud-init.
         try:
-            for net_name, ip_addresses in server['networks'].iteritems():
+            for net_name, ip_addresses in server['addresses'].iteritems():
                 for ip_address in ip_addresses:
-                    self.check_vm_connectivity(ip_address,
+                    self.check_vm_connectivity(ip_address['addr'],
                                                username,
                                                private_key,
                                                should_connect=should_connect)
@@ -791,7 +783,7 @@ class NetworkScenarioTest(ScenarioTest):
         if client is None:
             client = self.network_client
         if tenant_id is None:
-            tenant_id = client.rest_client.tenant_id
+            tenant_id = client.tenant_id
         secgroup = self._create_empty_security_group(namestart=namestart,
                                                      client=client,
                                                      tenant_id=tenant_id)
@@ -817,7 +809,7 @@ class NetworkScenarioTest(ScenarioTest):
         if client is None:
             client = self.network_client
         if not tenant_id:
-            tenant_id = client.rest_client.tenant_id
+            tenant_id = client.tenant_id
         sg_name = data_utils.rand_name(namestart)
         sg_desc = sg_name + " description"
         sg_dict = dict(name=sg_name,
@@ -842,7 +834,7 @@ class NetworkScenarioTest(ScenarioTest):
         if client is None:
             client = self.network_client
         if not tenant_id:
-            tenant_id = client.rest_client.tenant_id
+            tenant_id = client.tenant_id
         sgs = [
             sg for sg in client.list_security_groups().values()[0]
             if sg['tenant_id'] == tenant_id and sg['name'] == 'default'
@@ -874,7 +866,7 @@ class NetworkScenarioTest(ScenarioTest):
         if client is None:
             client = self.network_client
         if not tenant_id:
-            tenant_id = client.rest_client.tenant_id
+            tenant_id = client.tenant_id
         if secgroup is None:
             secgroup = self._default_security_group(client=client,
                                                     tenant_id=tenant_id)
@@ -986,7 +978,7 @@ class NetworkScenarioTest(ScenarioTest):
         if not client:
             client = self.network_client
         if not tenant_id:
-            tenant_id = client.rest_client.tenant_id
+            tenant_id = client.tenant_id
         router_id = CONF.network.public_router_id
         network_id = CONF.network.public_network_id
         if router_id:
@@ -1005,7 +997,7 @@ class NetworkScenarioTest(ScenarioTest):
         if not client:
             client = self.network_client
         if not tenant_id:
-            tenant_id = client.rest_client.tenant_id
+            tenant_id = client.tenant_id
         name = data_utils.rand_name(namestart)
         result = client.create_router(name=name,
                                       admin_state_up=True,

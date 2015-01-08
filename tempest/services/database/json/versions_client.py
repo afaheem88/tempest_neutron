@@ -24,9 +24,11 @@ CONF = config.CONF
 class DatabaseVersionsClientJSON(rest_client.RestClient):
 
     def __init__(self, auth_provider):
-        super(DatabaseVersionsClientJSON, self).__init__(auth_provider)
+        super(DatabaseVersionsClientJSON, self).__init__(
+            auth_provider,
+            CONF.database.catalog_type,
+            CONF.identity.region)
         self.skip_path()
-        self.service = CONF.database.catalog_type
 
     def list_db_versions(self, params=None):
         """List all versions."""

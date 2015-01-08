@@ -22,9 +22,11 @@ CONF = config.CONF
 class IdentityClientJSON(rest_client.RestClient):
 
     def __init__(self, auth_provider):
-        super(IdentityClientJSON, self).__init__(auth_provider)
-        self.service = CONF.identity.catalog_type
-        self.endpoint_url = 'adminURL'
+        super(IdentityClientJSON, self).__init__(
+            auth_provider,
+            CONF.identity.catalog_type,
+            CONF.identity.region,
+            endpoint_type='adminURL')
 
     def has_admin_extensions(self):
         """

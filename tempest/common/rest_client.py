@@ -78,16 +78,19 @@ class RestClient(object):
 
     LOG = logging.getLogger(__name__)
 
-    def __init__(self, auth_provider):
+    def __init__(self, auth_provider, service, region,
+                 endpoint_type='publicURL',
+                 build_interval=1, build_timeout=60):
         self.auth_provider = auth_provider
+        self.service = service
+        self.region = region
+        self.endpoint_type = endpoint_type
+        self.build_interval = build_interval
+        self.build_timeout = build_timeout
 
-        self.endpoint_url = None
-        self.service = None
         # The version of the API this client implements
         self.api_version = None
         self._skip_path = False
-        self.build_interval = CONF.compute.build_interval
-        self.build_timeout = CONF.compute.build_timeout
         self.general_header_lc = set(('cache-control', 'connection',
                                       'date', 'pragma', 'trailer',
                                       'transfer-encoding', 'via',
@@ -123,38 +126,6 @@ class RestClient(object):
                              str(self.token)[0:STRING_LIMIT],
                              str(self.get_headers())[0:STRING_LIMIT])
 
-    def _get_region(self, service):
-        """
-        Returns the region for a specific service
-        """
-        service_region = None
-        for cfgname in dir(CONF._config):
-            # Find all config.FOO.catalog_type and assume FOO is a service.
-            cfg = getattr(CONF, cfgname)
-            catalog_type = getattr(cfg, 'catalog_type', None)
-            if catalog_type == service:
-                service_region = getattr(cfg, 'region', None)
-        if not service_region:
-            service_region = CONF.identity.region
-        return service_region
-
-    def _get_endpoint_type(self, service):
-        """
-        Returns the endpoint type for a specific service
-        """
-        # If the client requests a specific endpoint type, then be it
-        if self.endpoint_url:
-            return self.endpoint_url
-        endpoint_type = None
-        for cfgname in dir(CONF._config):
-            # Find all config.FOO.catalog_type and assume FOO is a service.
-            cfg = getattr(CONF, cfgname)
-            catalog_type = getattr(cfg, 'catalog_type', None)
-            if catalog_type == service:
-                endpoint_type = getattr(cfg, 'endpoint_type', 'publicURL')
-                break
-        return endpoint_type
-
     @property
     def user(self):
         return self.auth_provider.credentials.username
@@ -187,8 +158,8 @@ class RestClient(object):
     def filters(self):
         _filters = dict(
             service=self.service,
-            endpoint_type=self._get_endpoint_type(self.service),
-            region=self._get_region(self.service)
+            endpoint_type=self.endpoint_type,
+            region=self.region
         )
         if self.api_version is not None:
             _filters['api_version'] = self.api_version
@@ -510,6 +481,11 @@ class RestClient(object):
             else:
                 raise exceptions.RateLimitExceeded(resp_body)
 
+        if resp.status == 415:
+            if parse_resp:
+                resp_body = self._parse_resp(resp_body)
+            raise exceptions.InvalidContentType(resp_body)
+
         if resp.status == 422:
             if parse_resp:
                 resp_body = self._parse_resp(resp_body)
@@ -619,33 +595,3 @@ class RestClient(object):
                 except jsonschema.ValidationError as ex:
                     msg = ("HTTP response header is invalid (%s)") % ex
                     raise exceptions.InvalidHTTPResponseHeader(msg)
-
-
-class NegativeRestClient(RestClient):
-    """
-    Version of RestClient that does not raise exceptions.
-    """
-    def _error_checker(self, method, url,
-                       headers, body, resp, resp_body):
-        pass
-
-    def send_request(self, method, url_template, resources, body=None):
-        url = url_template % tuple(resources)
-        if method == "GET":
-            resp, body = self.get(url)
-        elif method == "POST":
-            resp, body = self.post(url, body)
-        elif method == "PUT":
-            resp, body = self.put(url, body)
-        elif method == "PATCH":
-            resp, body = self.patch(url, body)
-        elif method == "HEAD":
-            resp, body = self.head(url)
-        elif method == "DELETE":
-            resp, body = self.delete(url)
-        elif method == "COPY":
-            resp, body = self.copy(url)
-        else:
-            assert False
-
-        return resp, body

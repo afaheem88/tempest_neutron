@@ -17,6 +17,7 @@ import json
 import httplib2
 from oslotest import mockpatch
 
+from tempest.common import negative_rest_client
 from tempest.common import rest_client
 from tempest import config
 from tempest import exceptions
@@ -30,18 +31,13 @@ class BaseRestClientTestClass(base.TestCase):
 
     url = 'fake_endpoint'
 
-    def _get_region(self):
-        return 'fake region'
-
     def setUp(self):
         super(BaseRestClientTestClass, self).setUp()
         self.useFixture(fake_config.ConfigFixture())
         self.stubs.Set(config, 'TempestConfigPrivate', fake_config.FakePrivate)
         self.rest_client = rest_client.RestClient(
-            fake_auth_provider.FakeAuthProvider())
+            fake_auth_provider.FakeAuthProvider(), None, None)
         self.stubs.Set(httplib2.Http, 'request', self.fake_http.request)
-        self.useFixture(mockpatch.PatchObject(self.rest_client, '_get_region',
-                                              side_effect=self._get_region()))
         self.useFixture(mockpatch.PatchObject(self.rest_client,
                                               '_log_request'))
 
@@ -304,7 +300,7 @@ class TestRestClientErrorCheckerJSON(base.TestCase):
         self.useFixture(fake_config.ConfigFixture())
         self.stubs.Set(config, 'TempestConfigPrivate', fake_config.FakePrivate)
         self.rest_client = rest_client.RestClient(
-            fake_auth_provider.FakeAuthProvider())
+            fake_auth_provider.FakeAuthProvider(), None, None)
 
     def test_response_less_than_400(self):
         self.rest_client._error_checker(**self.set_data("399"))
@@ -338,6 +334,11 @@ class TestRestClientErrorCheckerJSON(base.TestCase):
         self.assertRaises(exceptions.OverLimit,
                           self.rest_client._error_checker,
                           **self.set_data("413"))
+
+    def test_response_415(self):
+        self.assertRaises(exceptions.InvalidContentType,
+                          self.rest_client._error_checker,
+                          **self.set_data("415"))
 
     def test_response_422(self):
         self.assertRaises(exceptions.UnprocessableEntity,
@@ -433,8 +434,8 @@ class TestNegativeRestClient(BaseRestClientTestClass):
     def setUp(self):
         self.fake_http = fake_http.fake_httplib2()
         super(TestNegativeRestClient, self).setUp()
-        self.negative_rest_client = rest_client.NegativeRestClient(
-            fake_auth_provider.FakeAuthProvider())
+        self.negative_rest_client = negative_rest_client.NegativeRestClient(
+            fake_auth_provider.FakeAuthProvider(), None)
         self.useFixture(mockpatch.PatchObject(self.negative_rest_client,
                                               '_log_request'))
 
