@@ -83,6 +83,6 @@ class RoutersNegativeTest(base.BaseRouterTest):
                           self.client.delete_router,
                           self.router['id'])
 
-
-class RoutersNegativeIpV6Test(RoutersNegativeTest):
-    _ip_version = 6
+#IPv6 is not supported in JioCloud
+#class RoutersNegativeIpV6Test(RoutersNegativeTest):
+#    _ip_version = 6

@@ -253,6 +253,7 @@ class PortsAdminExtendedAttrsTestJSON(base.BaseAdminNetworkTest):
         cls.host_id = socket.gethostname()
 
     @test.attr(type='smoke')
+    @test.skip_because(bug='1352221',description='For a port, port-binding extended attributes are not supported')
     def test_create_port_binding_ext_attr(self):
         post_body = {"network_id": self.network['id'],
                      "binding:host_id": self.host_id}
@@ -264,6 +265,7 @@ class PortsAdminExtendedAttrsTestJSON(base.BaseAdminNetworkTest):
         self.assertEqual(self.host_id, host_id)
 
     @test.attr(type='smoke')
+    @test.skip_because(bug='1352221',description='For a port, port-binding extended attributes are not supported')
     def test_update_port_binding_ext_attr(self):
         post_body = {"network_id": self.network['id']}
         body = self.admin_client.create_port(**post_body)
@@ -277,6 +279,7 @@ class PortsAdminExtendedAttrsTestJSON(base.BaseAdminNetworkTest):
         self.assertEqual(self.host_id, host_id)
 
     @test.attr(type='smoke')
+    @test.skip_because(bug='1352221',description='For a port, port-binding extended attributes are not supported')
     def test_list_ports_binding_ext_attr(self):
         # Create a new port
         post_body = {"network_id": self.network['id']}
@@ -302,6 +305,7 @@ class PortsAdminExtendedAttrsTestJSON(base.BaseAdminNetworkTest):
         self.assertEqual(self.host_id, listed_port[0]['binding:host_id'])
 
     @test.attr(type='smoke')
+    @test.skip_because(bug='1352221',description='For a port, port-binding extended attributes are not supported')
     def test_show_port_binding_ext_attr(self):
         body = self.admin_client.create_port(network_id=self.network['id'])
         port = body['port']
@@ -315,11 +319,11 @@ class PortsAdminExtendedAttrsTestJSON(base.BaseAdminNetworkTest):
         self.assertEqual(port['binding:vif_details'],
                          show_port['binding:vif_details'])
 
-
-class PortsIpV6TestJSON(PortsTestJSON):
-    _ip_version = 6
-    _tenant_network_cidr = CONF.network.tenant_network_v6_cidr
-    _tenant_network_mask_bits = CONF.network.tenant_network_v6_mask_bits
+#IPv6 is not supported in JioCloud
+#class PortsIpV6TestJSON(PortsTestJSON):
+#    _ip_version = 6
+#    _tenant_network_cidr = CONF.network.tenant_network_v6_cidr
+#    _tenant_network_mask_bits = CONF.network.tenant_network_v6_mask_bits
 
 
 class PortsAdminExtendedAttrsIpV6TestJSON(PortsAdminExtendedAttrsTestJSON):

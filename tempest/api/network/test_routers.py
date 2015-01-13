@@ -341,6 +341,6 @@ class RoutersTest(base.BaseRouterTest):
         self.assertEqual(subnet_id,
                          interface_port['fixed_ips'][0]['subnet_id'])
 
-
-class RoutersIpV6Test(RoutersTest):
-    _ip_version = 6
+#IPv6 is not supported in JioCloud
+#class RoutersIpV6Test(RoutersTest):
+#    _ip_version = 6
